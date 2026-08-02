@@ -67,6 +67,12 @@ xcodebuild -scheme PrayerTimes -destination 'platform=macOS' build test
 ```
 Script kills the running debug instance first, then builds and opens (plain `open` does not reload an already-running app).
 
+## Releases
+- v1.0.0 (2026-08-02): `PrayerTimes-1.0.0.zip`, universal (x86_64 + arm64), ad-hoc signed, **not notarized**
+- Package with `ditto -c -k --keepParent <app> <zip>` (no `--sequesterRsrc`, which leaves a `__MACOSX` folder);
+  verify the zip with `ditto -x -k` — plain `unzip` strips xattrs and breaks `codesign --deep --strict`
+- Release notes must tell users to right-click → Open or `xattr -dr com.apple.quarantine` (Gatekeeper)
+
 ## Docs
 - `README.md` (English) at root; 13 translations in `docs/README.<lang>.md`, one per supported language
 - Language nav bar at the top of every README; root uses `docs/screenshots/…`, translations use `screenshots/…`
@@ -94,6 +100,7 @@ Script kills the running debug instance first, then builds and opens (plain `ope
 - 2026-08-02: Fixed country match failure (`Turkey` vs `TÜRKİYE`) via `Resources/CountryAliases.json` + `CountryNameMapper` (ISO code first, then English aliases, then fuzzy `name`/`nameEn`). Covers ~200 ISO codes and common English aliases for Diyanet Turkish country names.
 
 ## Recent Changes
+- 2026-08-02: Published GitHub release v1.0.0 with the packaged app and install notes
 - 2026-08-02: Turkish README now uses Turkish-language screenshots (`docs/screenshots/tr/`)
 - 2026-08-02: GitHub README with screenshots + 13 translated READMEs in `docs/`; repo pushed to
   `github.com/lutfullahkabalak/prayer-times-for-mac`

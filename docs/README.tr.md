@@ -11,7 +11,7 @@
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-AppKit-0A84FF)
 ![14 dil](https://img.shields.io/badge/dil-14-34C759)
 
-<img src="screenshots/menubar.png" width="620" alt="macOS menü çubuğunda Prayer Times" />
+<img src="screenshots/tr/menubar.png" width="620" alt="macOS menü çubuğunda Prayer Times" />
 
 </div>
 
@@ -49,21 +49,21 @@ Ayarlar'dan seçebileceğiniz dört farklı yerleşim var.
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="screenshots/panel-cards.png" width="330" alt="Kartlar görünümü" /><br />
+      <img src="screenshots/tr/panel-cards.png" width="330" alt="Kartlar görünümü" /><br />
       <b>Kartlar</b> — tam genişlikte gökyüzü kartları
     </td>
     <td align="center" width="50%">
-      <img src="screenshots/panel-grid.png" width="330" alt="Gökyüzü görünümü" /><br />
+      <img src="screenshots/tr/panel-grid.png" width="330" alt="Gökyüzü görünümü" /><br />
       <b>Gökyüzü</b> — 3×2 resimli ızgara
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="screenshots/panel-list.png" width="270" alt="Liste görünümü" /><br />
+      <img src="screenshots/tr/panel-list.png" width="270" alt="Liste görünümü" /><br />
       <b>Liste</b> — simgeli sade satırlar
     </td>
     <td align="center">
-      <img src="screenshots/panel-tiles.png" width="330" alt="Kutular görünümü" /><br />
+      <img src="screenshots/tr/panel-tiles.png" width="330" alt="Kutular görünümü" /><br />
       <b>Kutular</b> — tek sıra hâlinde kompakt
     </td>
   </tr>
@@ -74,11 +74,11 @@ Ayarlar'dan seçebileceğiniz dört farklı yerleşim var.
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="screenshots/settings.png" width="300" alt="Konum ve bildirim ayarları" /><br />
+      <img src="screenshots/tr/settings.png" width="300" alt="Konum ve bildirim ayarları" /><br />
       Konum ve vakit bazlı bildirimler
     </td>
     <td align="center" width="50%">
-      <img src="screenshots/settings-general.png" width="300" alt="Genel ayarlar" /><br />
+      <img src="screenshots/tr/settings-general.png" width="300" alt="Genel ayarlar" /><br />
       Görünüm, menü çubuğu ve dil
     </td>
   </tr>

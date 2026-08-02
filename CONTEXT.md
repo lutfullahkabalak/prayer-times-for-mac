@@ -72,8 +72,10 @@ Script kills the running debug instance first, then builds and opens (plain `ope
 - Language nav bar at the top of every README; root uses `docs/screenshots/…`, translations use `screenshots/…`
 - Screenshots in `docs/screenshots/`: `menubar`, `panel-cards`, `panel-list`, `panel-tiles`, `panel-grid`,
   `panel-rtl` (Arabic), `settings`, `settings-general`, `app-icon`
+- Turkish set in `docs/screenshots/tr/` (same names, no `app-icon`/`panel-rtl`); only `README.tr.md` uses it
 - Captured in English (except `panel-rtl`) by scripting the status item click and `screencapture -l <windowID>`;
   a `kCGEventMouseMoved` hover event is required before a synthetic click lands on popover controls
+- Wait ~25 s after launch before capturing: menu bar label and panel are empty until location + times resolve
 
 ## Status (2026-08-02)
 - Build: succeeds
@@ -92,6 +94,7 @@ Script kills the running debug instance first, then builds and opens (plain `ope
 - 2026-08-02: Fixed country match failure (`Turkey` vs `TÜRKİYE`) via `Resources/CountryAliases.json` + `CountryNameMapper` (ISO code first, then English aliases, then fuzzy `name`/`nameEn`). Covers ~200 ISO codes and common English aliases for Diyanet Turkish country names.
 
 ## Recent Changes
+- 2026-08-02: Turkish README now uses Turkish-language screenshots (`docs/screenshots/tr/`)
 - 2026-08-02: GitHub README with screenshots + 13 translated READMEs in `docs/`; repo pushed to
   `github.com/lutfullahkabalak/prayer-times-for-mac`
 - 2026-08-02: Menu bar app icon options use `Resources/Assets.xcassets/Mosque.imageset` (`mosque.png`) instead of dock AppIcon

@@ -1,0 +1,31 @@
+---
+description: Kod değişikliğinden sonra uygulamayı otomatik derle ve yeniden başlat
+alwaysApply: true
+---
+
+# Uygulamayı otomatik yeniden başlat
+
+Bu projede kaynak kodda (Swift, Resources, project.yml vb.) anlamlı bir değişiklik yaptıktan sonra **kullanıcı ayrıca istemeden** uygulamayı derle ve yeniden başlat.
+
+## Ne zaman
+- UI, servis, model veya kaynak dosyalarında değişiklik yapıldığında
+- Sadece yorum/dokümantasyon değişikliğinde gerek yok
+
+## Komut
+Önce çalışan debug örneğini kapat, sonra derle ve aç (`open` tek başına eski süreci yenilemez):
+```bash
+./scripts/restart-app.sh
+```
+
+Veya manuel:
+```bash
+pkill -f "build/Build/Products/Debug/PrayerTimes.app/Contents/MacOS/PrayerTimes" || true
+sleep 0.5
+xcodebuild -scheme PrayerTimes -destination 'platform=macOS' -derivedDataPath build build
+open build/Build/Products/Debug/PrayerTimes.app
+```
+
+## Notlar
+- Derleme başarısız olursa kullanıcıya hatayı bildir; uygulamayı açma
+- Kullanıcı "çalıştır" demese bile bu adımı uygula
+- Kullanıcıya kısaca "uygulama yeniden başlatıldı" de; her seferinde "istersen çalıştırabilirim" deme

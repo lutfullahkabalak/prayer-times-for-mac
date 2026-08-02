@@ -1,0 +1,86 @@
+name: PrayerTimes
+options:
+  bundleIdPrefix: com.lutfullahkabalak
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: true
+  knownLocales:
+    - en
+    - tr
+    - ar
+    - fa
+    - ur
+    - id
+    - ms
+    - bs
+    - sq
+    - az
+    - de
+    - fr
+    - nl
+    - ru
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 1.0.0
+
+targets:
+  PrayerTimes:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/PrayerTimes
+      - path: Resources/Assets.xcassets
+        buildPhase: resources
+      - path: Resources/Localizable.xcstrings
+        buildPhase: resources
+      - path: Resources/CountryAliases.json
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lutfullahkabalak.prayertimes
+        PRODUCT_NAME: PrayerTimes
+        INFOPLIST_FILE: Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: false
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_USER_SCRIPT_SANDBOXING: false
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    entitlements:
+      path: Resources/PrayerTimes.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-only: true
+        com.apple.security.personal-information.location: true
+
+  PrayerTimesTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/PrayerTimesTests
+    dependencies:
+      - target: PrayerTimes
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lutfullahkabalak.prayertimes.tests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PrayerTimes.app/Contents/MacOS/PrayerTimes"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  PrayerTimes:
+    build:
+      targets:
+        PrayerTimes: all
+        PrayerTimesTests: [test]
+    test:
+      targets:
+        - PrayerTimesTests

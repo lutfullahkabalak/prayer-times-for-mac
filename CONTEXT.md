@@ -68,10 +68,29 @@ xcodebuild -scheme PrayerTimes -destination 'platform=macOS' build test
 Script kills the running debug instance first, then builds and opens (plain `open` does not reload an already-running app).
 
 ## Releases
-- v1.0.0 (2026-08-02): `PrayerTimes-1.0.0.zip`, universal (x86_64 + arm64), ad-hoc signed, **not notarized**
+```bash
+./scripts/release.sh   # builds Release universal, Developer ID signs, notarizes, staples
+```
+- Script picks the `Developer ID Application` identity from the keychain and derives the team id from it;
+  signing settings are passed on the xcodebuild command line so debug builds stay ad-hoc
+- Needs a notarytool profile, `prayertimes-notary` by default (override with `NOTARY_PROFILE`)
+- Developer ID team is `NT667YPH5X` — **not** the `NHWD2G92F7` of the Apple Development cert;
+  `notarytool store-credentials` needs the former
+- Output: `dist/PrayerTimes-<version>.zip`, universal (x86_64 + arm64)
+- `CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO` is required: the `build` action injects
+  `com.apple.security.get-task-allow`, which notarization rejects outright (`archive` would strip it).
+  The script greps the signed bundle for it before uploading
 - Package with `ditto -c -k --keepParent <app> <zip>` (no `--sequesterRsrc`, which leaves a `__MACOSX` folder);
   verify the zip with `ditto -x -k` — plain `unzip` strips xattrs and breaks `codesign --deep --strict`
-- Release notes must tell users to right-click → Open or `xattr -dr com.apple.quarantine` (Gatekeeper)
+- Staple the `.app` **then** re-zip, otherwise the ticket is not in the shipped archive
+- Verify like a downloader: extract, `xattr -w com.apple.quarantine …`, then `spctl -a -vvv -t exec`
+  must report `source=Notarized Developer ID`
+- First notarization on a fresh Developer ID took ~34 min; later ones are usually a few minutes
+- v1.0.0 first shipped ad-hoc signed and **not notarized**; Gatekeeper on macOS 15+ showed the
+  "could not verify… free of malware" dialog whose default button trashes the app. Re-released
+  2026-08-02 notarized (`sha256 25ab434b…`)
+- Right-click → Open no longer bypasses Gatekeeper on macOS 15+; the fallback is
+  System Settings → Privacy & Security → Open Anyway, or `xattr -dr com.apple.quarantine`
 
 ## Docs
 - `README.md` (English) at root; 13 translations in `docs/README.<lang>.md`, one per supported language
@@ -100,6 +119,8 @@ Script kills the running debug instance first, then builds and opens (plain `ope
 - 2026-08-02: Fixed country match failure (`Turkey` vs `TÜRKİYE`) via `Resources/CountryAliases.json` + `CountryNameMapper` (ISO code first, then English aliases, then fuzzy `name`/`nameEn`). Covers ~200 ISO codes and common English aliases for Diyanet Turkish country names.
 
 ## Recent Changes
+- 2026-08-02: Added `scripts/release.sh` and re-released v1.0.0 notarized, after the ad-hoc build was
+  trashed by Gatekeeper on download; release notes no longer mention the quarantine workaround
 - 2026-08-02: Published GitHub release v1.0.0 with the packaged app and install notes
 - 2026-08-02: Turkish README now uses Turkish-language screenshots (`docs/screenshots/tr/`)
 - 2026-08-02: GitHub README with screenshots + 13 translated READMEs in `docs/`; repo pushed to

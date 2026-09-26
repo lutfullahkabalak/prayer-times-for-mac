@@ -58,7 +58,7 @@ struct SavedLocation: Codable, Sendable, Equatable {
     }
 
     var fullDisplayName: String {
-        "\(district.name), \(province.name), \(country.name)"
+        "\(LocationName.display(district.name)), \(LocationName.display(province.name)), \(LocationName.display(country.name))"
     }
 
     static let istanbul = SavedLocation(
@@ -92,4 +92,23 @@ struct CachedPrayerData: Codable, Sendable {
 enum LocationMode: String, Codable, Sendable {
     case automatic
     case manual
+}
+
+enum LocationBrowse: Equatable, Sendable {
+    case provinces
+    case countries
+    case districts
+}
+
+enum LocationName {
+    static let locale = Locale(identifier: "tr_TR")
+
+    /// Diyanet names arrive in Turkish uppercase (`İSTANBUL`, `ADIYAMAN`).
+    static func display(_ raw: String) -> String {
+        raw.capitalized(with: locale)
+    }
+
+    static func ascending(_ lhs: String, _ rhs: String) -> Bool {
+        display(lhs).compare(display(rhs), locale: locale) == .orderedAscending
+    }
 }

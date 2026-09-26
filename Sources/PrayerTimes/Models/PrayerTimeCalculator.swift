@@ -80,8 +80,10 @@ enum PrayerTimeCalculator {
         switch previous.marker {
         case .yatsi:
             return .yatsi
-        case .imsak, .gunes:
+        case .imsak:
             return .imsak
+        case .gunes:
+            return .gunes
         case .ogle:
             return .ogle
         case .ikindi:
@@ -92,15 +94,7 @@ enum PrayerTimeCalculator {
     }
 
     static func isCardActive(prayer: Prayer, activePrayer: Prayer?) -> Bool {
-        guard let activePrayer else { return false }
-        switch prayer {
-        case .gunes:
-            return false
-        case .imsak:
-            return activePrayer == .imsak
-        default:
-            return activePrayer == prayer
-        }
+        prayer == activePrayer
     }
 
     static func todayDay(from days: [DayTimes], now: Date, timeZone: TimeZone) -> DayTimes? {

@@ -156,9 +156,72 @@ import Testing
     #expect(days[0].times.imsak.count == 5)
 }
 
+@Test func activePrayerBetweenImsakAndSunriseStaysImsak() throws {
+    let timeZone = TimeZone(identifier: "Europe/Istanbul")!
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = timeZone
+
+    var components = DateComponents()
+    components.year = 2026
+    components.month = 8
+    components.day = 2
+    components.hour = 5
+    components.minute = 0
+    let now = try #require(calendar.date(from: components))
+
+    let day = DayTimes(
+        date: now,
+        times: PrayerTimesPayload(
+            imsak: "04:10",
+            gunes: "05:54",
+            ogle: "13:15",
+            ikindi: "17:09",
+            aksam: "20:27",
+            yatsi: "22:04"
+        ),
+        hijriDate: nil
+    )
+
+    let state = PrayerTimeCalculator.activePrayer(now: now, days: [day], timeZone: timeZone)
+    #expect(state?.prayer == .imsak)
+}
+
+@Test func activePrayerAfterSunriseIsGunes() throws {
+    let timeZone = TimeZone(identifier: "Europe/Istanbul")!
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = timeZone
+
+    var components = DateComponents()
+    components.year = 2026
+    components.month = 8
+    components.day = 2
+    components.hour = 8
+    components.minute = 0
+    let now = try #require(calendar.date(from: components))
+
+    let day = DayTimes(
+        date: now,
+        times: PrayerTimesPayload(
+            imsak: "04:10",
+            gunes: "05:54",
+            ogle: "13:15",
+            ikindi: "17:09",
+            aksam: "20:27",
+            yatsi: "22:04"
+        ),
+        hijriDate: nil
+    )
+
+    let state = PrayerTimeCalculator.activePrayer(now: now, days: [day], timeZone: timeZone)
+    #expect(state?.prayer == .gunes)
+    let ogle = try #require(PrayerTimeCalculator.parseTime("13:15", on: now, timeZone: timeZone))
+    #expect(state?.nextBoundary == ogle)
+}
+
 @Test func isCardActiveRules() {
     #expect(PrayerTimeCalculator.isCardActive(prayer: .gunes, activePrayer: .imsak) == false)
     #expect(PrayerTimeCalculator.isCardActive(prayer: .imsak, activePrayer: .imsak) == true)
+    #expect(PrayerTimeCalculator.isCardActive(prayer: .gunes, activePrayer: .gunes) == true)
     #expect(PrayerTimeCalculator.isCardActive(prayer: .ikindi, activePrayer: .ikindi) == true)
 }
 
@@ -193,4 +256,13 @@ import Testing
     for (english, diyanet) in samples {
         #expect(CountryNameMapper.aliasedDiyanetName(for: english) == diyanet)
     }
+}
+
+@Test func locationNamesUseTurkishTitleCase() {
+    #expect(LocationName.display("İSTANBUL") == "İstanbul")
+    #expect(LocationName.display("TÜRKİYE") == "Türkiye")
+    #expect(LocationName.display("ADIYAMAN") == "Adıyaman")
+    #expect(LocationName.display("AĞRI") == "Ağrı")
+    #expect(LocationName.display("AFYONKARAHİSAR") == "Afyonkarahisar")
+    #expect(LocationName.display("BAŞAKŞEHİR") == "Başakşehir")
 }

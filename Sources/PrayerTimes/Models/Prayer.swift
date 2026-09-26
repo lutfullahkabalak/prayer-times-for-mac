@@ -32,7 +32,7 @@ enum Prayer: String, CaseIterable, Codable, Sendable, Identifiable {
         }
     }
 
-    /// Prayer periods used for active-prayer / countdown (excludes sunrise).
+    /// Prayer periods that exclude the sunrise slot. Active countdown includes Güneş after sunrise.
     static let prayerPeriods: [Prayer] = [.imsak, .ogle, .ikindi, .aksam, .yatsi]
 
     /// Times that can receive notifications (includes sunrise).

@@ -29,13 +29,7 @@ final class AppCoordinator {
         }
 
         if SettingsStore.locationMode == .automatic {
-            if let resolved = await locationResolver.resolveAutomaticLocation() {
-                let withTZ = await locationResolver.resolveTimeZone(for: resolved)
-                if withTZ != SettingsStore.savedLocation {
-                    await store.applyLocation(withTZ)
-                    MenuBarController.shared.refresh()
-                }
-            }
+            await refreshAutomaticLocation()
         } else {
             await store.refresh(force: store.cache == nil)
         }
@@ -48,6 +42,26 @@ final class AppCoordinator {
     }
 
     func handlePrayerTimesUpdated() async {
+        await NotificationService.shared.reschedule(with: store.cache)
+    }
+
+    /// Automatic mode only. Manual picks stay until the user changes them.
+    func refreshLocationAfterWake() async {
+        guard didBootstrap else { return }
+        guard SettingsStore.locationMode == .automatic else { return }
+        try? await Task.sleep(for: .seconds(2))
+        await refreshAutomaticLocation(reportErrors: false, ignoreRecentFix: true)
+    }
+
+    private func refreshAutomaticLocation(reportErrors: Bool = true, ignoreRecentFix: Bool = false) async {
+        guard let resolved = await locationResolver.resolveAutomaticLocation(
+            reportErrors: reportErrors,
+            ignoreRecentFix: ignoreRecentFix
+        ) else { return }
+        let withTZ = await locationResolver.resolveTimeZone(for: resolved)
+        guard withTZ != SettingsStore.savedLocation else { return }
+        await store.applyLocation(withTZ)
+        MenuBarController.shared.refresh()
         await NotificationService.shared.reschedule(with: store.cache)
     }
 }

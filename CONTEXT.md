@@ -12,6 +12,7 @@ Native macOS menu bar app showing current prayer time and countdown. Tap opens a
 
 ## Key Decisions
 - Active prayer = current period (not next); countdown = time until period ends
+- After sunrise until Dhuhr, the active period is Güneş (countdown until Öğle). İmsak stays active only until sunrise
 - Midnight–Imsak = still Isha (yesterday's Yatsi boundary)
 - District API: use `?stateId=` only (not `countryId&stateId`)
 - Menu bar label via NSStatusItem (AppKit); updates every second with prayer name + countdown
@@ -25,16 +26,18 @@ Native macOS menu bar app showing current prayer time and countdown. Tap opens a
 - Settings use adaptive `windowBackgroundColor` surface, `.primary` text, accent-tinted switch toggles
 - Header dates use `L10n.effectiveLanguageCode` locale, not system locale
 - First launch: seed `SavedLocation.istanbul`, load times, then request location permission and upgrade if resolved
+- On `NSWorkspace.didWakeNotification`, automatic mode re-queries location after a short delay. Manual selection is left as-is. A failed wake query does not surface an error
 - Location auth waits on `locationManagerDidChangeAuthorization` (no fixed sleep)
 - `State` model renamed to `Province` to avoid SwiftUI `@State` conflict
 - Prayer cards use a fixed three-column layout: name left, countdown center (active only), time right
 - Card text color (`textInk` / `textShadow`) derived from `SkyPalette` average sky luminance (WCAG 4.5:1 threshold), not fixed white
 - Dhuhr, Sunrise (Güneş), and Asr (İkindi) use forced white text with dark shadow; other cards follow palette luminance
 - Settings header uses ZStack for true title centering; Form inset aligned with main panel padding
-- Location detect applies immediately and shows readable `fullDisplayName` card
+- Location detect applies immediately and shows readable title-cased place names (`LocationName`, Turkish locale)
+- Settings location: selected place + “use my location” on top; manual country row always visible. Province list stays collapsed until the province row is opened, so it does not steal the settings scroll. Esc steps back through that list, then leaves settings
 - 14 languages via embedded L10n tables; manual language override in Settings (System + 14 langs)
 - RTL for ar/fa/ur based on selected language
-- Panel view style selectable in Settings > General: Cards, List, Tiles (single tight horizontal row with dividers), Grid/Sky (3×2 SkyScene)
+- Panel view style selectable in Settings > General as a menu (not tabs): Cards, List, Tiles, Grid/Sky. Changing it does not recreate the settings screen
 - Panel width by view: list 300pt, others 420pt; height: tiles ~170pt, list ~300pt, cards 500pt, grid 360pt, settings 580pt
 - `PanelViewStyle` stored in UserDefaults (`panelViewStyle`); `PanelLayout.viewStyle` for live UI updates
 
@@ -119,6 +122,14 @@ Script kills the running debug instance first, then builds and opens (plain `ope
 - 2026-08-02: Fixed country match failure (`Turkey` vs `TÜRKİYE`) via `Resources/CountryAliases.json` + `CountryNameMapper` (ISO code first, then English aliases, then fuzzy `name`/`nameEn`). Covers ~200 ISO codes and common English aliases for Diyanet Turkish country names.
 
 ## Recent Changes
+- 2026-09-26: Version 1.0.1 — location picker, wake refresh, Güneş countdown, signed release
+- 2026-09-26: Automatic location is queried again when the Mac wakes from sleep
+- 2026-09-26: View style picker is a menu. Changing it no longer rebuilds the panel, so settings stay put
+- 2026-09-26: Province list in location settings stays collapsed until the province row is opened, and no longer uses a nested scroller
+- 2026-09-26: Automatic location search no longer stays on “Konum aranıyor…”. GPS, geocoding, and Diyanet requests time out; a second search cannot start while one is running
+- 2026-09-26: Location list no longer fetches every province's districts up front. City list loads with the province request; district counts were dropped. Country catalog and GPS overlap, and recent device location is reused
+- 2026-09-26: Location settings match a search + selected place + always-on manual country/city/district list. Diyanet uppercase names display in Turkish title case
+- 2026-09-26: After sunrise until Dhuhr, the active countdown is on Güneş (until Öğle). İmsak stays active only until sunrise
 - 2026-08-02: Added `scripts/release.sh` and re-released v1.0.0 notarized, after the ad-hoc build was
   trashed by Gatekeeper on download; release notes no longer mention the quarantine workaround
 - 2026-08-02: Published GitHub release v1.0.0 with the packaged app and install notes

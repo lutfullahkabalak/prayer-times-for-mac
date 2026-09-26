@@ -8,8 +8,8 @@ final class LocationResolver: NSObject, ObservableObject, CLLocationManagerDeleg
     private let manager = CLLocationManager()
     private let api = DiyanetAPI()
     private let geocoder = CLGeocoder()
-    private nonisolated(unsafe) var continuation: CheckedContinuation<CLLocation?, Never>?
-    private nonisolated(unsafe) var authContinuation: CheckedContinuation<CLAuthorizationStatus, Never>?
+    private nonisolated(unsafe) var locationResume: ResumeOnce<CLLocation?>?
+    private nonisolated(unsafe) var authResume: ResumeOnce<CLAuthorizationStatus>?
 
     override init() {
         super.init()
@@ -18,28 +18,49 @@ final class LocationResolver: NSObject, ObservableObject, CLLocationManagerDeleg
     }
 
     @MainActor
-    func resolveAutomaticLocation() async -> SavedLocation? {
+    func resolveAutomaticLocation(reportErrors: Bool = true, ignoreRecentFix: Bool = false) async -> SavedLocation? {
         guard CLLocationManager.locationServicesEnabled() else {
-            errorMessage = L10n.text("error.location_disabled")
+            if reportErrors {
+                errorMessage = L10n.text("error.location_disabled")
+            }
             return nil
         }
 
+        guard !isResolving else { return nil }
+
         isResolving = true
-        errorMessage = nil
+        if reportErrors {
+            errorMessage = nil
+        }
         defer { isResolving = false }
+
+        let countriesTask = Task { try? await api.fetchCountries() }
 
         let auth = await waitForAuthorization()
         guard auth == .authorizedAlways || auth == .authorized else {
-            errorMessage = L10n.text("error.location_denied")
+            countriesTask.cancel()
+            if reportErrors {
+                errorMessage = L10n.text("error.location_denied")
+            }
             return nil
         }
 
-        guard let location = await requestLocation() else {
-            errorMessage = L10n.text("error.location_unavailable")
+        guard let location = await requestLocation(ignoreRecentFix: ignoreRecentFix) else {
+            countriesTask.cancel()
+            if reportErrors {
+                errorMessage = L10n.text("error.location_unavailable")
+            }
             return nil
         }
 
-        return await matchLocation(location)
+        let countries = await countriesTask.value
+        return await matchLocation(location, prefetchedCountries: countries, reportErrors: reportErrors)
+    }
+
+    @MainActor
+    private func report(_ message: String, enabled: Bool) {
+        guard enabled else { return }
+        errorMessage = message
     }
 
     @MainActor
@@ -49,53 +70,63 @@ final class LocationResolver: NSObject, ObservableObject, CLLocationManagerDeleg
             return current
         }
 
+        let resume = ResumeOnce<CLAuthorizationStatus>()
+        authResume = resume
         return await withCheckedContinuation { continuation in
-            self.authContinuation = continuation
+            resume.set(continuation)
             manager.requestWhenInUseAuthorization()
+            let fallback = manager.authorizationStatus
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(15))
+                resume.resume(fallback)
+            }
         }
     }
 
     @MainActor
-    private func requestLocation() async -> CLLocation? {
-        await withCheckedContinuation { continuation in
-            self.continuation = continuation
+    private func requestLocation(ignoreRecentFix: Bool = false) async -> CLLocation? {
+        if !ignoreRecentFix, let recent = manager.location,
+           recent.horizontalAccuracy >= 0,
+           recent.horizontalAccuracy <= 5_000,
+           Date().timeIntervalSince(recent.timestamp) < 10 * 60 {
+            return recent
+        }
 
+        let resume = ResumeOnce<CLLocation?>()
+        locationResume = resume
+        return await withCheckedContinuation { continuation in
+            resume.set(continuation)
+            manager.requestLocation()
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(8))
-                if self.continuation != nil {
-                    self.continuation?.resume(returning: nil)
-                    self.continuation = nil
-                }
+                resume.resume(nil)
             }
-
-            manager.requestLocation()
         }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        continuation?.resume(returning: locations.first)
-        continuation = nil
+        locationResume?.resume(locations.first)
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        continuation?.resume(returning: nil)
-        continuation = nil
+        locationResume?.resume(nil)
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        guard let continuation = authContinuation else { return }
         let status = manager.authorizationStatus
         guard status != .notDetermined else { return }
-        authContinuation = nil
-        continuation.resume(returning: status)
+        authResume?.resume(status)
     }
 
     @MainActor
-    func matchLocation(_ location: CLLocation) async -> SavedLocation? {
+    func matchLocation(
+        _ location: CLLocation,
+        prefetchedCountries: [Country]? = nil,
+        reportErrors: Bool = true
+    ) async -> SavedLocation? {
         do {
-            let placemarks = try await geocoder.reverseGeocodeLocation(location)
-            guard let placemark = placemarks.first else {
-                errorMessage = L10n.text("error.location_unavailable")
+            guard let placemark = await reverseGeocode(location) else {
+                report(L10n.text("error.location_unavailable"), enabled: reportErrors)
                 return nil
             }
 
@@ -103,19 +134,23 @@ final class LocationResolver: NSObject, ObservableObject, CLLocationManagerDeleg
             let provinceName = placemark.administrativeArea ?? placemark.locality ?? ""
             let districtName = placemark.subAdministrativeArea ?? placemark.locality ?? provinceName
 
-            let countries = try await api.fetchCountries()
+            let countries = if let prefetchedCountries {
+                prefetchedCountries
+            } else {
+                try await api.fetchCountries()
+            }
             guard let countryObj = CountryNameMapper.matchCountry(
                 isoCode: placemark.isoCountryCode,
                 countryName: countryName,
                 in: countries
             ) else {
-                errorMessage = L10n.text("error.location_match_failed")
+                report(L10n.text("error.location_match_failed"), enabled: reportErrors)
                 return nil
             }
 
             let provinces = try await api.fetchProvinces(countryId: countryObj.id)
             guard let province = fuzzyMatch(provinceName, in: provinces.map(\.name)) else {
-                errorMessage = L10n.text("error.location_match_failed")
+                report(L10n.text("error.location_match_failed"), enabled: reportErrors)
                 return nil
             }
             let provinceObj = provinces.first { $0.name == province }!
@@ -125,16 +160,31 @@ final class LocationResolver: NSObject, ObservableObject, CLLocationManagerDeleg
                 if let fallback = districts.first(where: { $0.name == provinceObj.name }) ?? districts.first {
                     return makeSavedLocation(country: countryObj, province: provinceObj, district: fallback, placemark: placemark)
                 }
-                errorMessage = L10n.text("error.location_match_failed")
+                report(L10n.text("error.location_match_failed"), enabled: reportErrors)
                 return nil
             }
             let districtObj = districts.first { $0.name == district }!
 
             return makeSavedLocation(country: countryObj, province: provinceObj, district: districtObj, placemark: placemark)
         } catch {
-            errorMessage = error.localizedDescription
+            report(error.localizedDescription, enabled: reportErrors)
             return nil
         }
+    }
+
+    @MainActor
+    private func reverseGeocode(_ location: CLLocation) async -> CLPlacemark? {
+        let geocode = Task { @MainActor () -> CLPlacemark? in
+            (try? await self.geocoder.reverseGeocodeLocation(location))?.first
+        }
+        let watchdog = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            geocode.cancel()
+            self.geocoder.cancelGeocode()
+        }
+        let placemark = await geocode.value
+        watchdog.cancel()
+        return placemark
     }
 
     @MainActor
@@ -161,7 +211,7 @@ final class LocationResolver: NSObject, ObservableObject, CLLocationManagerDeleg
             country: country,
             province: province,
             district: district,
-            displayName: district.name.capitalized(with: Locale.current),
+            displayName: LocationName.display(district.name),
             timeZoneIdentifier: placemark.timeZone?.identifier
         )
     }
@@ -181,5 +231,31 @@ final class LocationResolver: NSObject, ObservableObject, CLLocationManagerDeleg
             .replacingOccurrences(of: "İ", with: "i")
             .replacingOccurrences(of: "I", with: "i")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+/// Resumes a continuation at most once, from whichever callback arrives first.
+private final class ResumeOnce<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<T, Never>?
+    private var fired = false
+
+    func set(_ continuation: CheckedContinuation<T, Never>) {
+        lock.lock()
+        self.continuation = continuation
+        lock.unlock()
+    }
+
+    func resume(_ value: T) {
+        lock.lock()
+        guard !fired else {
+            lock.unlock()
+            return
+        }
+        fired = true
+        let continuation = self.continuation
+        self.continuation = nil
+        lock.unlock()
+        continuation?.resume(returning: value)
     }
 }

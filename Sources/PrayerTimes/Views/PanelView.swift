@@ -105,7 +105,7 @@ struct PanelView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .onExitCommand {
             if panelLayout.showSettings {
-                panelLayout.showSettings = false
+                _ = panelLayout.consumeEscape()
             } else {
                 MenuBarController.shared.closePopover()
             }
@@ -113,10 +113,13 @@ struct PanelView: View {
         .onChange(of: panelLayout.viewStyle) { _, _ in
             MenuBarController.shared.syncPopoverSize()
         }
-        .onChange(of: panelLayout.showSettings) { _, _ in
+        .onChange(of: panelLayout.showSettings) { _, shown in
+            if !shown {
+                panelLayout.locationBrowse = .provinces
+            }
             MenuBarController.shared.syncPopoverSize()
         }
-        .id("\(language.currentCode)-\(panelLayout.viewStyle.rawValue)-\(panelLayout.showSettings)")
+        .id("\(language.currentCode)-\(panelLayout.showSettings)")
     }
 
     private var mainPanel: some View {
@@ -144,7 +147,7 @@ struct PanelView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "location.fill")
                         .font(.caption)
-                    Text(store.location?.displayName ?? L10n.text("label.no_location"))
+                    Text(store.location.map { LocationName.display($0.district.name) } ?? L10n.text("label.no_location"))
                         .font(.system(size: 14, weight: .semibold))
                 }
                 if let today = store.today {
@@ -290,9 +293,10 @@ struct SettingsView: View {
     @State private var provinces: [Province] = []
     @State private var districts: [District] = []
     @State private var selectedCountry: Country?
-    @State private var selectedProvince: Province?
-    @State private var selectedDistrict: District?
-    @State private var locationMode: LocationMode = SettingsStore.locationMode
+    @State private var browsingProvince: Province?
+    @State private var cityQuery = ""
+    @State private var isLoadingPlaces = false
+    @State private var loadedProvinceCountryId: String?
     @State private var notificationsEnabled = SettingsStore.notificationsEnabled
     @State private var notificationPrefs = SettingsStore.notificationPreferences
     @State private var launchAtLogin = SettingsStore.launchAtLogin
@@ -314,97 +318,31 @@ struct SettingsView: View {
             Divider().opacity(0.35)
             Form {
                 Section(L10n.text("settings.location")) {
-                        Picker(L10n.text("settings.location_mode"), selection: $locationMode) {
-                            Text(L10n.text("settings.automatic")).tag(LocationMode.automatic)
-                            Text(L10n.text("settings.manual")).tag(LocationMode.manual)
-                        }
-                        .pickerStyle(.segmented)
-                        .foregroundStyle(.primary)
-                        .onChange(of: locationMode) { _, newValue in
-                            guard isInitialized else { return }
-                            persistLocationMode(newValue)
-                        }
-
-                        if locationMode == .automatic {
-                            Button {
-                                Task { await detectLocation() }
-                            } label: {
-                                HStack {
-                                    if locationResolver.isResolving {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                    }
-                                    Text(
-                                        locationResolver.isResolving
-                                            ? L10n.text("settings.detecting_location")
-                                            : L10n.text("settings.detect_location")
-                                    )
-                                    .foregroundStyle(.primary)
-                                }
-                            }
-                            .disabled(locationResolver.isResolving)
-
-                            if let location = displayedLocation {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "location.fill")
-                                        .foregroundStyle(.secondary)
-                                    Text(location.fullDisplayName)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(.primary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                                .padding(10)
-                                .background(
-                                    Color(nsColor: .controlBackgroundColor),
-                                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                )
-                            }
-
-                            if let error = locationResolver.errorMessage {
-                                Text(error)
-                                    .foregroundStyle(.red)
-                                    .font(.caption)
-                            }
-                        } else {
-                            Picker(L10n.text("settings.country"), selection: $selectedCountry) {
-                                Text("—").tag(Optional<Country>.none)
-                                ForEach(countries) { country in
-                                    Text(country.name).tag(Optional(country))
-                                }
-                            }
-                            .foregroundStyle(.primary)
-                            .onChange(of: selectedCountry) { _, country in
-                                guard isInitialized else { return }
-                                Task { await loadProvinces(for: country) }
-                            }
-
-                            Picker(L10n.text("settings.state"), selection: $selectedProvince) {
-                                Text("—").tag(Optional<Province>.none)
-                                ForEach(provinces) { province in
-                                    Text(province.name).tag(Optional(province))
-                                }
-                            }
-                            .foregroundStyle(.primary)
-                            .disabled(selectedCountry == nil)
-                            .onChange(of: selectedProvince) { _, province in
-                                guard isInitialized else { return }
-                                Task { await loadDistricts(for: province) }
-                            }
-
-                            Picker(L10n.text("settings.district"), selection: $selectedDistrict) {
-                                Text("—").tag(Optional<District>.none)
-                                ForEach(districts) { district in
-                                    Text(district.name).tag(Optional(district))
-                                }
-                            }
-                            .foregroundStyle(.primary)
-                            .disabled(selectedProvince == nil)
-                            .onChange(of: selectedDistrict) { _, district in
-                                guard isInitialized else { return }
-                                Task { await applyManualLocationIfComplete(district: district) }
-                            }
+                    LocationSettingsSection(
+                        location: displayedLocation,
+                        isResolving: locationResolver.isResolving,
+                        errorMessage: locationResolver.errorMessage,
+                        countries: countries,
+                        provinces: provinces,
+                        districts: districts,
+                        isLoadingPlaces: isLoadingPlaces,
+                        selectedCountry: selectedCountry,
+                        browsingProvince: browsingProvince,
+                        browse: panelLayout.locationBrowse,
+                        cityQuery: $cityQuery,
+                        onDetect: { Task { await detectLocation() } },
+                        onShowCountries: { panelLayout.locationBrowse = .countries },
+                        onBackToProvinces: { panelLayout.locationBrowse = .provinces },
+                        onSelectCountry: { country in Task { await selectCountry(country) } },
+                        onSelectProvince: { province in Task { await openProvince(province) } },
+                        onSelectDistrict: { district in Task { await applyManualLocation(district) } }
+                    )
+                    .onChange(of: panelLayout.locationBrowse) { previous, browse in
+                        if browse == .provinces && previous != .provinces {
+                            cityQuery = ""
                         }
                     }
+                }
 
                     Section(L10n.text("settings.notifications")) {
                         Toggle(L10n.text("settings.enable_notifications"), isOn: $notificationsEnabled)
@@ -434,7 +372,7 @@ struct SettingsView: View {
                                 Text(style.displayName).tag(style)
                             }
                         }
-                        .pickerStyle(.segmented)
+                        .pickerStyle(.menu)
                         .foregroundStyle(.primary)
                         .onChange(of: viewStyle) { _, style in
                             guard isInitialized else { return }
@@ -507,8 +445,9 @@ struct SettingsView: View {
         .foregroundStyle(.primary)
         .frame(maxHeight: .infinity)
         .task {
-            await loadCountries()
+            async let countryLoad: Void = loadCountries()
             prefillFromSavedLocation()
+            await countryLoad
             isInitialized = true
         }
     }
@@ -538,47 +477,76 @@ struct SettingsView: View {
 
     private func loadCountries() async {
         do {
-            countries = try await DiyanetAPI().fetchCountries()
+            let loaded = try await DiyanetAPI().fetchCountries()
+            countries = loaded.sorted { LocationName.ascending($0.name, $1.name) }
         } catch {
             countries = []
         }
     }
 
     private func loadProvinces(for country: Country?) async {
-        provinces = []
-        districts = []
-        selectedProvince = nil
-        selectedDistrict = nil
-        guard let country else { return }
+        guard let country else {
+            provinces = []
+            districts = []
+            loadedProvinceCountryId = nil
+            return
+        }
+        if loadedProvinceCountryId == country.id, !provinces.isEmpty {
+            return
+        }
+        if loadedProvinceCountryId != country.id {
+            provinces = []
+            districts = []
+        }
+        isLoadingPlaces = true
+        defer { isLoadingPlaces = false }
         do {
-            provinces = try await DiyanetAPI().fetchProvinces(countryId: country.id)
+            let loaded = try await DiyanetAPI().fetchProvinces(countryId: country.id)
+            provinces = loaded.sorted { LocationName.ascending($0.name, $1.name) }
+            loadedProvinceCountryId = country.id
         } catch {
             provinces = []
+            loadedProvinceCountryId = nil
         }
     }
 
-    private func loadDistricts(for province: Province?) async {
-        districts = []
-        selectedDistrict = nil
-        guard let province else { return }
+    private func loadDistricts(for province: Province) async {
+        let provinceID = province.id
+        isLoadingPlaces = true
+        defer { isLoadingPlaces = false }
         do {
-            districts = try await DiyanetAPI().fetchDistricts(stateId: province.id)
+            let loaded = try await DiyanetAPI().fetchDistricts(stateId: provinceID)
+            guard browsingProvince?.id == provinceID, panelLayout.locationBrowse == .districts else { return }
+            districts = loaded.sorted { LocationName.ascending($0.name, $1.name) }
         } catch {
+            guard browsingProvince?.id == provinceID else { return }
             districts = []
         }
+    }
+
+    private func selectCountry(_ country: Country) async {
+        selectedCountry = country
+        browsingProvince = nil
+        districts = []
+        panelLayout.locationBrowse = .provinces
+        cityQuery = ""
+        await loadProvinces(for: country)
+    }
+
+    private func openProvince(_ province: Province) async {
+        browsingProvince = province
+        districts = []
+        cityQuery = ""
+        panelLayout.locationBrowse = .districts
+        await loadDistricts(for: province)
     }
 
     private func prefillFromSavedLocation() {
         guard let saved = SettingsStore.savedLocation ?? store.location else { return }
         detectedLocation = saved
         selectedCountry = saved.country
-        selectedProvince = saved.province
-        selectedDistrict = saved.district
         Task {
             await loadProvinces(for: saved.country)
-            await loadDistricts(for: saved.province)
-            selectedProvince = saved.province
-            selectedDistrict = saved.district
         }
     }
 
@@ -587,28 +555,23 @@ struct SettingsView: View {
         let withTZ = await locationResolver.resolveTimeZone(for: resolved)
         detectedLocation = withTZ
         selectedCountry = withTZ.country
-        selectedProvince = withTZ.province
-        selectedDistrict = withTZ.district
+        browsingProvince = nil
+        panelLayout.locationBrowse = .provinces
         SettingsStore.locationMode = .automatic
-        locationMode = .automatic
         await store.applyLocation(withTZ)
+        await loadProvinces(for: withTZ.country)
         await NotificationService.shared.reschedule(with: store.cache)
     }
 
-    private func persistLocationMode(_ mode: LocationMode) {
-        SettingsStore.locationMode = mode
-    }
-
-    private func applyManualLocationIfComplete(district: District?) async {
+    private func applyManualLocation(_ district: District) async {
         guard let country = selectedCountry,
-              let province = selectedProvince,
-              let district else { return }
+              let province = browsingProvince else { return }
 
         var location = SavedLocation(
             country: country,
             province: province,
             district: district,
-            displayName: district.name.capitalized(with: Locale.current),
+            displayName: LocationName.display(district.name),
             timeZoneIdentifier: nil
         )
         location = await locationResolver.resolveTimeZone(for: location)

@@ -27,20 +27,43 @@ struct DiyanetAPI: Sendable {
     static let baseURL = URL(string: "https://ezanvakti.imsakiyem.com")!
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = DiyanetAPI.defaultSession) {
         self.session = session
     }
 
+    private static let defaultSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 12
+        configuration.timeoutIntervalForResource = 20
+        configuration.waitsForConnectivity = false
+        return URLSession(configuration: configuration)
+    }()
+
     func fetchCountries() async throws -> [Country] {
-        try await get(path: "/api/locations/countries")
+        if let cached = await LocationResponseCache.shared.countries() {
+            return cached
+        }
+        let loaded: [Country] = try await get(path: "/api/locations/countries")
+        await LocationResponseCache.shared.setCountries(loaded)
+        return loaded
     }
 
     func fetchProvinces(countryId: String) async throws -> [Province] {
-        try await get(path: "/api/locations/states", query: ["countryId": countryId])
+        if let cached = await LocationResponseCache.shared.provinces(countryId: countryId) {
+            return cached
+        }
+        let loaded: [Province] = try await get(path: "/api/locations/states", query: ["countryId": countryId])
+        await LocationResponseCache.shared.setProvinces(loaded, countryId: countryId)
+        return loaded
     }
 
     func fetchDistricts(stateId: String) async throws -> [District] {
-        try await get(path: "/api/locations/districts", query: ["stateId": stateId])
+        if let cached = await LocationResponseCache.shared.districts(stateId: stateId) {
+            return cached
+        }
+        let loaded: [District] = try await get(path: "/api/locations/districts", query: ["stateId": stateId])
+        await LocationResponseCache.shared.setDistricts(loaded, stateId: stateId)
+        return loaded
     }
 
     func searchDistricts(query: String) async throws -> [District] {
@@ -91,4 +114,21 @@ struct DiyanetAPI: Sendable {
 
 private struct APIErrorBody: Decodable {
     let message: String
+}
+
+private actor LocationResponseCache {
+    static let shared = LocationResponseCache()
+
+    private var cachedCountries: [Country]?
+    private var cachedProvinces: [String: [Province]] = [:]
+    private var cachedDistricts: [String: [District]] = [:]
+
+    func countries() -> [Country]? { cachedCountries }
+    func setCountries(_ value: [Country]) { cachedCountries = value }
+
+    func provinces(countryId: String) -> [Province]? { cachedProvinces[countryId] }
+    func setProvinces(_ value: [Province], countryId: String) { cachedProvinces[countryId] = value }
+
+    func districts(stateId: String) -> [District]? { cachedDistricts[stateId] }
+    func setDistricts(_ value: [District], stateId: String) { cachedDistricts[stateId] = value }
 }

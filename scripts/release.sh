@@ -12,9 +12,10 @@ APP="$DERIVED/Build/Products/Release/PrayerTimes.app"
 
 cd "$ROOT"
 
-IDENTITY="$(security find-identity -v -p codesigning \
-  | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)"
-if [ -z "$IDENTITY" ]; then
+IDENTITY_LINE="$(security find-identity -v -p codesigning | grep 'Developer ID Application:' | head -1)"
+IDENTITY_HASH="$(echo "$IDENTITY_LINE" | awk '{print $2}')"
+IDENTITY="$(echo "$IDENTITY_LINE" | sed -n 's/.*"\(.*\)"/\1/p')"
+if [ -z "$IDENTITY_HASH" ] || [ -z "$IDENTITY" ]; then
   echo "No 'Developer ID Application' certificate found in the keychain." >&2
   echo "Create one in Xcode > Settings > Accounts > Manage Certificates." >&2
   exit 1
@@ -111,7 +112,7 @@ xcodebuild -scheme PrayerTimes \
   ARCHS="arm64 x86_64" \
   ONLY_ACTIVE_ARCH=NO \
   CODE_SIGN_STYLE=Manual \
-  CODE_SIGN_IDENTITY="$IDENTITY" \
+  CODE_SIGN_IDENTITY="$IDENTITY_HASH" \
   DEVELOPMENT_TEAM="$TEAM_ID" \
   ENABLE_HARDENED_RUNTIME=YES \
   CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
@@ -127,7 +128,7 @@ fi
 
 # Xcode's build action re-signs Sparkle.framework but leaves its XPC services and
 # helper tools ad-hoc. Notarization needs those signed inside-out, then the app again.
-resign_sparkle "$APP" "$IDENTITY"
+resign_sparkle "$APP" "$IDENTITY_HASH"
 
 codesign --verify --deep --strict --verbose=2 "$APP"
 

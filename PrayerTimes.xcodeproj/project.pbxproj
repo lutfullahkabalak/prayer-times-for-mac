@@ -17,12 +17,14 @@
 		24039ED535695230AF0A7AB7 /* Prayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985E37F1D1C401A8B02A87D5 /* Prayer.swift */; };
 		317FBA36CB0564F0BB819333 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = F30037F7625B717DBFEB4C17 /* Localizable.xcstrings */; };
 		331C3494B34EF98698A1013B /* PrayerTimesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1651E2F67BBA78907E81BD9 /* PrayerTimesApp.swift */; };
+		35919089BA552FEE6906EB04 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A9A0633E036ABB439549E86 /* UpdateController.swift */; };
 		370BE18382819A9F73FBA2C3 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F68268263EA26E2D13E952D /* NotificationService.swift */; };
 		5878EDD2E031EEFC0F40203E /* LocationSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F83E1D3F6696FB485122050 /* LocationSettingsSection.swift */; };
 		5AD37E38E0DDFE9295D28766 /* PanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05A06A156EB204E479239AE /* PanelView.swift */; };
 		5C09740422500F7AF967C6EE /* LocationResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB97AC44AA05F2D12B27D15E /* LocationResolver.swift */; };
 		750F4700991E19BDAF2D9112 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FDF0D37CB40C81516D038E5 /* MenuBarController.swift */; };
 		764B0401A4DBD3A2CB1BB6D5 /* LanguageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B98D3F7C6E3046B4F8847E1F /* LanguageManager.swift */; };
+		8247367A9C1445E30292F43A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A484ACDFE05454F4BC03916E /* Sparkle */; };
 		94D7EA93FE2A2B06B8FD8F77 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53935ED6766D9427B08FE880 /* Assets.xcassets */; };
 		9F75415A0912692A6E7B6C0A /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D7D565C4290F9643314889 /* L10n.swift */; };
 		A4C2C61CD3D73156061EF769 /* PrayerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF74F0B18D1E6E76F7469E72 /* PrayerStore.swift */; };
@@ -51,6 +53,7 @@
 /* Begin PBXFileReference section */
 		0F83E1D3F6696FB485122050 /* LocationSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationSettingsSection.swift; sourceTree = "<group>"; };
 		18B28E14A0E5ECD704CB1F58 /* PrayerTimesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimesTests.swift; sourceTree = "<group>"; };
+		2A9A0633E036ABB439549E86 /* UpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateController.swift; sourceTree = "<group>"; };
 		36A96C903CFB820FBCF35A2F /* PrayerTimeCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimeCalculator.swift; sourceTree = "<group>"; };
 		38B3148C43119E7BDA22CE24 /* PrayerCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerCache.swift; sourceTree = "<group>"; };
 		3FDF0D37CB40C81516D038E5 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
@@ -81,6 +84,17 @@
 		EF8CFDBEC84EB36796F9B115 /* RTLHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTLHelper.swift; sourceTree = "<group>"; };
 		F30037F7625B717DBFEB4C17 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		91E6473CC60E263DABB3BD2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8247367A9C1445E30292F43A /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		057AE5ED12BFB346A6FFF7B0 /* Art */ = {
@@ -167,6 +181,7 @@
 				38B3148C43119E7BDA22CE24 /* PrayerCache.swift */,
 				BF74F0B18D1E6E76F7469E72 /* PrayerStore.swift */,
 				EF8CFDBEC84EB36796F9B115 /* RTLHelper.swift */,
+				2A9A0633E036ABB439549E86 /* UpdateController.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -209,6 +224,7 @@
 			buildPhases = (
 				D2C7E08F2B2CFCAC27BAEBEA /* Sources */,
 				DF13F1C1942F4FDD423F1F78 /* Resources */,
+				91E6473CC60E263DABB3BD2E /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -216,6 +232,7 @@
 			);
 			name = PrayerTimes;
 			packageProductDependencies = (
+				A484ACDFE05454F4BC03916E /* Sparkle */,
 			);
 			productName = PrayerTimes;
 			productReference = 7BF97CDD9BF398B273023FAD /* PrayerTimes.app */;
@@ -267,6 +284,9 @@
 			);
 			mainGroup = 42C3F86F92E600251C6D1EA6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1CAA87C3566C1AB48161DABF /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2055FBADAC4DCF5149CCB6F6 /* Products */;
 			projectDirPath = "";
@@ -329,6 +349,7 @@
 				331C3494B34EF98698A1013B /* PrayerTimesApp.swift in Sources */,
 				C66404DAE638ACF13CAC7450 /* RTLHelper.swift in Sources */,
 				A4E0C3BD0768A0D9A673A78D /* SkyScene.swift in Sources */,
+				35919089BA552FEE6906EB04 /* UpdateController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -577,6 +598,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1CAA87C3566C1AB48161DABF /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A484ACDFE05454F4BC03916E /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1CAA87C3566C1AB48161DABF /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1B0498321E6DA7B2FC6F8D75 /* Project object */;
 }

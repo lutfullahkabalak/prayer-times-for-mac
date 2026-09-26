@@ -434,6 +434,10 @@ struct SettingsView: View {
                                 SettingsStore.launchAtLogin = enabled
                                 LaunchAtLogin.isEnabled = enabled
                             }
+
+                        Button(L10n.text("settings.check_for_updates")) {
+                            UpdateController.shared.checkForUpdates()
+                        }
                     }
             }
             .formStyle(.grouped)

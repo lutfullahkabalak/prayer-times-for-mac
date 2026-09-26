@@ -22,6 +22,87 @@ fi
 TEAM_ID="$(echo "$IDENTITY" | sed -n 's/.*(\([A-Z0-9]*\))$/\1/p')"
 echo "Signing with: $IDENTITY"
 
+resign_sparkle() {
+  local app="$1"
+  local identity="$2"
+  local fw="$app/Contents/Frameworks/Sparkle.framework"
+  local current="$fw/Versions/Current"
+  if [ ! -d "$current" ]; then
+    echo "Sparkle.framework is missing from the app." >&2
+    exit 1
+  fi
+
+  local entitlements
+  entitlements="$(mktemp)"
+  codesign -d --entitlements :- "$app" > "$entitlements"
+
+  codesign -f -s "$identity" -o runtime --timestamp "$current/XPCServices/Installer.xpc"
+  if [ -d "$current/XPCServices/Downloader.xpc" ]; then
+    codesign -f -s "$identity" -o runtime --timestamp --preserve-metadata=entitlements \
+      "$current/XPCServices/Downloader.xpc"
+  fi
+  codesign -f -s "$identity" -o runtime --timestamp "$current/Autoupdate"
+  codesign -f -s "$identity" -o runtime --timestamp "$current/Updater.app"
+  codesign -f -s "$identity" -o runtime --timestamp "$fw"
+  codesign -f -s "$identity" -o runtime --timestamp --entitlements "$entitlements" "$app"
+  rm -f "$entitlements"
+}
+
+update_appcast() {
+  local app="$1"
+  local zip="$2"
+  local version="$3"
+  local tools="$ROOT/build/sparkle-tools"
+  local sparkle_version="2.10.0"
+  if [ ! -x "$tools/bin/sign_update" ]; then
+    mkdir -p "$tools"
+    curl -fsSL -o "$tools/Sparkle.tar.xz" \
+      "https://github.com/sparkle-project/Sparkle/releases/download/${sparkle_version}/Sparkle-${sparkle_version}.tar.xz"
+    tar -xf "$tools/Sparkle.tar.xz" -C "$tools"
+  fi
+
+  local signed build pubdate
+  signed="$("$tools/bin/sign_update" "$zip")"
+  build="$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$app/Contents/Info.plist")"
+  pubdate="$(date -u +"%a, %d %b %Y %H:%M:%S +0000")"
+  python3 - "$ROOT/appcast.xml" "$version" "$build" "$pubdate" "$signed" <<'PY'
+import sys
+path, version, build, pubdate, signed = sys.argv[1:]
+signature = signed.split('edSignature="', 1)[1].split('"', 1)[0]
+length = signed.split('length="', 1)[1].split('"', 1)[0]
+url = (
+    "https://github.com/lutfullahkabalak/prayer-times-for-mac/releases/download/"
+    f"v{version}/PrayerTimes-{version}.zip"
+)
+notes = f"https://github.com/lutfullahkabalak/prayer-times-for-mac/releases/tag/v{version}"
+xml = f"""<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Prayer Times</title>
+    <link>https://github.com/lutfullahkabalak/prayer-times-for-mac</link>
+    <description>Prayer Times updates</description>
+    <language>en</language>
+    <item>
+      <title>Version {version}</title>
+      <sparkle:version>{build}</sparkle:version>
+      <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>{notes}</sparkle:releaseNotesLink>
+      <pubDate>{pubdate}</pubDate>
+      <enclosure
+        url="{url}"
+        length="{length}"
+        type="application/octet-stream"
+        sparkle:edSignature="{signature}" />
+    </item>
+  </channel>
+</rss>
+"""
+with open(path, "w", encoding="utf-8") as handle:
+    handle.write(xml)
+PY
+}
+
 rm -rf "$DERIVED"
 xcodebuild -scheme PrayerTimes \
   -configuration Release \
@@ -43,6 +124,10 @@ if codesign -d --entitlements - --xml "$APP" 2>/dev/null | grep -q "get-task-all
   echo "Signed app still carries get-task-allow; notarization would fail." >&2
   exit 1
 fi
+
+# Xcode's build action re-signs Sparkle.framework but leaves its XPC services and
+# helper tools ad-hoc. Notarization needs those signed inside-out, then the app again.
+resign_sparkle "$APP" "$IDENTITY"
 
 codesign --verify --deep --strict --verbose=2 "$APP"
 
@@ -68,7 +153,10 @@ xcrun stapler staple "$APP"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"
 
+update_appcast "$APP" "$ZIP" "$VERSION"
+
 echo
 spctl -a -vvv -t exec "$APP"
 shasum -a 256 "$ZIP"
 echo "Release ready: $ZIP"
+echo "appcast.xml was updated. Commit and push it so clients can see this release."

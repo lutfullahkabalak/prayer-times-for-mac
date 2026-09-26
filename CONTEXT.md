@@ -40,6 +40,10 @@ Native macOS menu bar app showing current prayer time and countdown. Tap opens a
 - Panel view style selectable in Settings > General as a menu (not tabs): Cards, List, Tiles, Grid/Sky. Changing it does not recreate the settings screen
 - Panel width by view: list 300pt, others 420pt; height: tiles ~170pt, list ~300pt, cards 500pt, grid 360pt, settings 580pt
 - `PanelViewStyle` stored in UserDefaults (`panelViewStyle`); `PanelLayout.viewStyle` for live UI updates
+- Updates use Sparkle 2. No custom server: `appcast.xml` on `main` is the feed (`SUFeedURL` raw GitHub URL). EdDSA private key stays in the login keychain; only `SUPublicEDKey` is in the app
+- Update checks run on every launch (`checkForUpdatesInBackground` right after the updater starts) and again every 24 hours while the app stays open (`SUScheduledCheckInterval` 86400). Settings > General has “Güncellemeleri denetle”
+- Sandboxed installs need `SUEnableInstallerLauncherService` and the mach-lookup exceptions `…-spks` / `…-spki`. The app already has network client, so Sparkle’s Downloader XPC stays off
+- Next shipped build must bump both `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`. `release.sh` re-signs Sparkle’s nested tools, then rewrites `appcast.xml` from `sign_update`. That file has to be committed and pushed before clients can see the new build. The published 1.0.1 zip has no Sparkle, so it will not update itself
 
 ## Structure
 ```
@@ -47,7 +51,8 @@ Sources/PrayerTimes/
   Models/     Prayer, PrayerTimeCalculator, LocationModels, PanelViewStyle, MenuBarDisplayStyle
   Services/   DiyanetAPI, PrayerStore, PrayerCache, LocationResolver,
               CountryNameMapper, NotificationService, LaunchAtLogin,
-              AppCoordinator, MenuBarController, PanelLayout, RTLHelper
+              AppCoordinator, MenuBarController, PanelLayout, RTLHelper,
+              UpdateController
   Views/      MenuBarLabel, PanelView (incl. SettingsView, PrayerCard),
               PrayerStyleViews (PrayerListRow, PrayerSimpleTile, PrayerGridCell)
   Art/        SkyScene (SkyPalette, Skyline, Canvas scenes)
@@ -122,6 +127,7 @@ Script kills the running debug instance first, then builds and opens (plain `ope
 - 2026-08-02: Fixed country match failure (`Turkey` vs `TÜRKİYE`) via `Resources/CountryAliases.json` + `CountryNameMapper` (ISO code first, then English aliases, then fuzzy `name`/`nameEn`). Covers ~200 ISO codes and common English aliases for Diyanet Turkish country names.
 
 ## Recent Changes
+- 2026-09-26: In-app update check via Sparkle. Settings > General “Güncellemeleri denetle”; a check on each launch and every 24 hours while running. Feed is `appcast.xml`
 - 2026-09-26: Version 1.0.1 — location picker, wake refresh, Güneş countdown, signed release
 - 2026-09-26: Automatic location is queried again when the Mac wakes from sleep
 - 2026-09-26: View style picker is a menu. Changing it no longer rebuilds the panel, so settings stay put

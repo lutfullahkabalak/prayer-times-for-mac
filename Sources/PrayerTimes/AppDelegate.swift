@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             MenuBarController.shared.setup()
             await AppCoordinator.shared.bootstrapIfNeeded()
             MenuBarController.shared.refresh()
+            UpdateController.shared.start()
         }
     }
 

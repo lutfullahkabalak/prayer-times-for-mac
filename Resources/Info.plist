@@ -26,5 +26,15 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Prayer Times uses your location to show accurate prayer times for your area.</string>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/lutfullahkabalak/prayer-times-for-mac/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>vZZRhNo9mbiU1AiD+P7FkKLiUw0Wen4RF5Y/MRyQvbc=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
 </dict>
 </plist>

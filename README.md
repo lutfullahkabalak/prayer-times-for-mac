@@ -109,6 +109,14 @@ Arabic, Persian and Urdu flip the whole interface to right-to-left.
 - macOS 14 (Sonoma) or later
 - Xcode 15 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen) to build from source
 
+## Install with Homebrew
+
+```bash
+brew install --cask lutfullahkabalak/tap/prayer-times
+```
+
+Requires macOS 14 or later; supports Intel and Apple Silicon. Distributed through the [developer-maintained tap](https://github.com/lutfullahkabalak/homebrew-tap).
+
 ## Build from source
 
 ```bash

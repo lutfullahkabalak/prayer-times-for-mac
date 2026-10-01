@@ -109,6 +109,14 @@ Arapça, Farsça ve Urduca seçildiğinde arayüzün tamamı sağdan sola döner
 - macOS 14 (Sonoma) veya üzeri
 - Kaynaktan derlemek için Xcode 15+ ve [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 
+## Homebrew ile kurulum
+
+```bash
+brew install --cask lutfullahkabalak/tap/prayer-times
+```
+
+macOS 14 ve üzeri gerekir; Intel ve Apple Silicon desteklenir. [Geliştiricinin Homebrew deposu](https://github.com/lutfullahkabalak/homebrew-tap) üzerinden dağıtılır.
+
 ## Kaynaktan derleme
 
 ```bash

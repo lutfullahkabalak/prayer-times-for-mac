@@ -10,6 +10,8 @@ The interface supports 14 languages: English, Turkish, Arabic, Persian, Urdu, In
 
 Türkçe: Prayer Times, macOS 14 ve üzeri için menü çubuğunda çalışan bir namaz vakti uygulamasıdır. Diyanet verileri, mevcut vakit için geri sayım, bildirimler ve indirilen aylık vakitler için çevrimdışı erişim sunar.
 
+Homebrew installation: `brew install --cask lutfullahkabalak/tap/prayer-times`. This uses the developer-maintained third-party tap, not the official Homebrew Cask repository. The release supports Intel and Apple Silicon.
+
 ## Sources
 
 - [Official project website](https://lutfullahkabalak.github.io/prayer-times-for-mac/): Turkish overview, screenshots, requirements, and FAQ.
@@ -18,3 +20,4 @@ Türkçe: Prayer Times, macOS 14 ve üzeri için menü çubuğunda çalışan bi
 - [Turkish documentation](https://github.com/lutfullahkabalak/prayer-times-for-mac/blob/main/docs/README.tr.md): Turkish feature and build documentation.
 - [Issue tracker](https://github.com/lutfullahkabalak/prayer-times-for-mac/issues): Bug reports and feature requests.
 - [Prayer-time data provider](https://ezanvakti.imsakiyem.com): API serving Diyanet prayer times.
+- [Developer-maintained Homebrew tap](https://github.com/lutfullahkabalak/homebrew-tap): Cask definition, installation, and update instructions.

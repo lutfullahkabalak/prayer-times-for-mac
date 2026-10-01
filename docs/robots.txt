@@ -1,0 +1,7 @@
+# Crawlers read robots.txt at the HOST root, not the project path.
+# On GitHub project Pages, publish/merge these rules in the user-site repo
+# lutfullahkabalak.github.io to serve https://lutfullahkabalak.github.io/robots.txt.
+User-agent: *
+Allow: /prayer-times-for-mac/
+
+Sitemap: https://lutfullahkabalak.github.io/prayer-times-for-mac/sitemap.xml

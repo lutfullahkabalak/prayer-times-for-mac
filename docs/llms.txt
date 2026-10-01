@@ -1,0 +1,20 @@
+# Prayer Times for Mac
+
+> Prayer Times is a native macOS menu bar app for Islamic prayer times (namaz / salah), using Diyanet prayer-time data. It requires macOS 14 Sonoma or later.
+
+Prayer Times shows the current prayer period and a live countdown until that period ends, rather than labeling the next prayer as the current prayer. Clicking the menu bar item opens the daily prayer-time panel. It is an independent app, not an official Diyanet application.
+
+The app supports automatic location detection or manual country/province/district selection, per-prayer notifications at prayer time and/or 5–60 minutes before, four panel layouts (Cards, Sky, List, Boxes), a Hijri date, and launch at login. Previously downloaded monthly prayer times work offline; fetching new times requires a network connection.
+
+The interface supports 14 languages: English, Turkish, Arabic, Persian, Urdu, Indonesian, Malay, Bosnian, Albanian, Azerbaijani, German, French, Dutch, and Russian. Arabic, Persian, and Urdu use right-to-left layouts.
+
+Türkçe: Prayer Times, macOS 14 ve üzeri için menü çubuğunda çalışan bir namaz vakti uygulamasıdır. Diyanet verileri, mevcut vakit için geri sayım, bildirimler ve indirilen aylık vakitler için çevrimdışı erişim sunar.
+
+## Sources
+
+- [Official project website](https://lutfullahkabalak.github.io/prayer-times-for-mac/): Turkish overview, screenshots, requirements, and FAQ.
+- [Latest release and downloads](https://github.com/lutfullahkabalak/prayer-times-for-mac/releases/latest): Current downloadable release; use this source for version and installation details.
+- [Source code and English documentation](https://github.com/lutfullahkabalak/prayer-times-for-mac): Features, build requirements, implementation, and source code.
+- [Turkish documentation](https://github.com/lutfullahkabalak/prayer-times-for-mac/blob/main/docs/README.tr.md): Turkish feature and build documentation.
+- [Issue tracker](https://github.com/lutfullahkabalak/prayer-times-for-mac/issues): Bug reports and feature requests.
+- [Prayer-time data provider](https://ezanvakti.imsakiyem.com): API serving Diyanet prayer times.

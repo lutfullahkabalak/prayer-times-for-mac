@@ -101,7 +101,6 @@ enum PrayerTimeCalculator {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         return days.first { calendar.isDate($0.date, inSameDayAs: now) }
-            ?? days.sorted { $0.date < $1.date }.first
     }
 }
 

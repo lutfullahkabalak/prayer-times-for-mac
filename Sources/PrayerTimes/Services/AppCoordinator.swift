@@ -30,9 +30,8 @@ final class AppCoordinator {
 
         if SettingsStore.locationMode == .automatic {
             await refreshAutomaticLocation()
-        } else {
-            await store.refresh(force: store.cache == nil)
         }
+        await store.refresh(force: store.cache == nil)
 
         if store.cache == nil {
             await store.refresh(force: true)
@@ -48,9 +47,11 @@ final class AppCoordinator {
     /// Automatic mode only. Manual picks stay until the user changes them.
     func refreshLocationAfterWake() async {
         guard didBootstrap else { return }
-        guard SettingsStore.locationMode == .automatic else { return }
         try? await Task.sleep(for: .seconds(2))
-        await refreshAutomaticLocation(reportErrors: false, ignoreRecentFix: true)
+        if SettingsStore.locationMode == .automatic {
+            await refreshAutomaticLocation(reportErrors: false, ignoreRecentFix: true)
+        }
+        await store.refresh(force: false)
     }
 
     private func refreshAutomaticLocation(reportErrors: Bool = true, ignoreRecentFix: Bool = false) async {

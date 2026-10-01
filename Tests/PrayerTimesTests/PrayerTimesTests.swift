@@ -266,3 +266,17 @@ import Testing
     #expect(LocationName.display("AFYONKARAHİSAR") == "Afyonkarahisar")
     #expect(LocationName.display("BAŞAKŞEHİR") == "Başakşehir")
 }
+
+@Test func missingTodayDoesNotDisplayOldPrayerTimes() throws {
+    let timeZone = TimeZone(identifier: "Europe/Istanbul")!
+    let now = Date()
+    let yesterday = now.addingTimeInterval(-86400)
+    let day = DayTimes(
+        date: yesterday,
+        times: PrayerTimesPayload(imsak: "04:10", gunes: "05:54", ogle: "13:15",
+                                 ikindi: "17:09", aksam: "20:27", yatsi: "22:04"),
+        hijriDate: nil
+    )
+    #expect(PrayerTimeCalculator.todayDay(from: [day], now: now, timeZone: timeZone) == nil)
+    #expect(PrayerTimeCalculator.todayDay(from: [day], now: yesterday, timeZone: timeZone) == day)
+}

@@ -127,6 +127,7 @@ Script kills the running debug instance first, then builds and opens (plain `ope
 - 2026-08-02: Fixed country match failure (`Turkey` vs `TÜRKİYE`) via `Resources/CountryAliases.json` + `CountryNameMapper` (ISO code first, then English aliases, then fuzzy `name`/`nameEn`). Covers ~200 ISO codes and common English aliases for Diyanet Turkish country names.
 
 ## Recent Changes
+- 2026-10-01: Version 1.0.3 (build 3) — refresh prayer data even when automatic location is unchanged; check freshness every minute and after wake in both location modes. Missing current-day data triggers a fetch instead of displaying an old day. Cancelled countdown timers exit cleanly. All 15 tests pass, including the live monthly API test.
 - 2026-09-26: Version 1.0.2 (build 2) — signed release that includes in-app update checks
 - 2026-09-26: In-app update check via Sparkle. Settings > General “Güncellemeleri denetle”; a check on each launch and every 24 hours while running. Feed is `appcast.xml`
 - 2026-09-26: Version 1.0.1 — location picker, wake refresh, Güneş countdown, signed release

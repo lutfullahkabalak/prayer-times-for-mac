@@ -21,12 +21,24 @@ final class PrayerStore {
     private let api = DiyanetAPI()
     private var refreshTask: Task<Void, Never>?
     private var timerTask: Task<Void, Never>?
+    private var maintenanceTask: Task<Void, Never>?
     private var panelOpen = false
 
     func start(panelOpen: Bool = false) {
         self.panelOpen = panelOpen
         loadCache()
         startTimer()
+        maintenanceTask?.cancel()
+        maintenanceTask = Task {
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .seconds(60))
+                } catch {
+                    return
+                }
+                await refresh(force: false)
+            }
+        }
     }
 
     func setPanelOpen(_ open: Bool) {
@@ -47,7 +59,7 @@ final class PrayerStore {
             refreshTask?.cancel()
         }
 
-        if !force, let cache, !cache.isStale, !days.isEmpty {
+        if !force, let cache, !cache.isStale, cache.day(for: Date(), timeZone: timeZone) != nil {
             updateActiveState()
             return
         }
@@ -75,7 +87,7 @@ final class PrayerStore {
             updateActiveState()
             NotificationCenter.default.post(name: .prayerTimesUpdated, object: nil)
         } catch {
-            if cache == nil {
+            if today == nil {
                 errorMessage = error.localizedDescription
             }
             updateActiveState()
@@ -106,7 +118,11 @@ final class PrayerStore {
         timerTask?.cancel()
         timerTask = Task {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    return
+                }
                 updateActiveState()
             }
         }

@@ -22,8 +22,18 @@ Open http://localhost:8765.
 After a successful deployment, the site is available at:
 https://lutfullahkabalak.github.io/prayer-times-for-mac/
 
-Future changes to `docs/` on `main` deploy automatically. The download buttons
-open the latest GitHub release, so they do not need to change with each version.
+Future changes to `docs/` on `main` deploy automatically. Publishing a GitHub
+release also redeploys the site. Before upload, `scripts/update-site-download.py`
+resolves the latest stable release ZIP and updates all three download links and
+the schema URLs in the deployed HTML. Buttons download the ZIP directly without
+opening the release page. A missing ZIP fails deployment instead of publishing
+a broken download link. No browser-side JavaScript or API call is needed.
+
+For a local preview with the latest URLs, run:
+
+```sh
+python3 scripts/update-site-download.py
+```
 
 GitHub documentation:
 https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages

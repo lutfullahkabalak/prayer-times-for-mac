@@ -20,6 +20,7 @@ releases and downgrades. An already-current cask produces no commit.
 Use `--check` to verify without writing, or `--tag v1.0.2` to select a specific
 published release. Check mode exits with status 1 when an update is needed.
 
-The website download buttons already point to the latest release. They need no
-version update. Publish the release asset before making it visible in appcast
+Publishing a GitHub release automatically redeploys the website with direct
+download links to the latest stable release ZIP. The Pages workflow resolves
+these URLs before upload, so no manual website version update is needed. Publish the release asset before making it visible in appcast
 or Homebrew; the local build ZIP alone is not sufficient for Homebrew updates.

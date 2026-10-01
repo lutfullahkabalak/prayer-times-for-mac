@@ -5,7 +5,10 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'scripts/update-site-download.py'
       - '.github/workflows/pages.yml'
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -25,6 +28,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve latest stable release download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/update-site-download.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
